@@ -1,5 +1,6 @@
 import React from 'react';
 import { HashRouter as Router, Route, Link } from 'react-router-dom';
+import { ChakraProvider } from '@chakra-ui/react';
 import Map from './views/Map';
 
 
@@ -24,10 +25,12 @@ function Home() {
 
 export default function AppRouter() {
   return (
-    <Router>
-      {routes.map((r, i) => (
-        <Route path={r.path} exact component={r.component} key={i} />
-      ))}
-    </Router>
+    <ChakraProvider>
+      <Router>
+        {routes.map((r, i) => (
+          <Route path={r.path} exact component={r.component} key={i} />
+        ))}
+      </Router>
+    </ChakraProvider>
   );
 }
