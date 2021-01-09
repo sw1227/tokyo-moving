@@ -1,16 +1,12 @@
 import React from 'react';
 import { HashRouter as Router, Route, Link } from 'react-router-dom';
+import Map from './views/Map';
 
 
 const routes = [
   { path: "/", component: Home },
-  { path: "/hello", component: Hello },
+  { path: "/map", component: Map },
 ];
-
-
-function Hello() {
-  return <div>Hello, world!</div>;
-}
 
 
 function Home() {
