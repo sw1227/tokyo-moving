@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 
 export function railColor(feature) {
   const name = feature.properties["路線名"];
@@ -47,3 +49,12 @@ export function railDashArray(feature) {
   // Default: not dashed
   return [1, 0];
 }
+
+
+export const colorInterpolates = {
+  Turbo: d3.interpolateTurbo,
+  Viridis: d3.interpolateViridis,
+  Cividis: d3.interpolateCividis,
+  Spectral: d3.interpolateSpectral,
+  Inferno: d3.interpolateInferno
+};
