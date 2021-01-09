@@ -1170,6 +1170,13 @@
   dependencies:
     "@luma.gl/shadertools" "^8.3.1"
 
+"@deck.gl/extensions@^8.3.13":
+  version "8.3.13"
+  resolved "https://registry.yarnpkg.com/@deck.gl/extensions/-/extensions-8.3.13.tgz#9e27663cde0159eb23a6575007d4d84b2f0ad031"
+  integrity sha512-DGYrjiKOOOXtAUa5tajSZyGdjk350Qycn2pMTOoQkH9N1+KjTZU4Cchk8tB30JT8Ihy5eO6DvbSGDC6sIb16xA==
+  dependencies:
+    "@luma.gl/shadertools" "^8.3.1"
+
 "@deck.gl/geo-layers@8.3.12":
   version "8.3.12"
   resolved "https://registry.yarnpkg.com/@deck.gl/geo-layers/-/geo-layers-8.3.12.tgz#82fae7cb568b41952ce80899a230b7f2e9c42334"

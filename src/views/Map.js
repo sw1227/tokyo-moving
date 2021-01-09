@@ -2,10 +2,13 @@ import React from 'react';
 import DeckGL from '@deck.gl/react';
 import { StaticMap } from 'react-map-gl';
 import { GeoJsonLayer } from '@deck.gl/layers';
+import { PathStyleExtension } from '@deck.gl/extensions';
 import * as d3 from 'd3';
 
 import stationData from '../data/tokyo_moving60.geojson';
 import railData from '../data/N02-19_RailroadSection.geojson';
+
+import { railColor, railDashArray } from '../color';
 
 
 // Initial viewport settings
@@ -30,10 +33,15 @@ const RailwayMap = () => (
     <GeoJsonLayer
       id="rail-layer"
       data={railData}
-      getLineWidth={1.4}
-      getLineColor={[150, 150, 150]}
-      lineWidthScale={20}
+      getLineWidth={2}
+      getLineColor={railColor}
+      lineWidthScale={30}
       lineWidthMinPixels={2}
+      opacity={0.4}
+      getDashArray={railDashArray}
+      dashJustified={false}
+      highPrecisionDash={true}
+      extensions={[new PathStyleExtension({dash: true})]}
     />
     <GeoJsonLayer
       id="station-layer"
