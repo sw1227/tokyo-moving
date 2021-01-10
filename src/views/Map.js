@@ -8,12 +8,10 @@ import {
   Box,
   Divider,
   Switch,
-  Slider,
-  SliderTrack,
-  SliderFilledTrack,
-  SliderThumb,
   Select,
-  HStack
+  HStack,
+  Slider, SliderTrack, SliderFilledTrack, SliderThumb,
+  Table, Thead, Tbody, Tr, Th, Td
 } from '@chakra-ui/react';
 
 import stationData from '../data/tokyo_moving60.geojson';
@@ -38,6 +36,7 @@ const RailwayMap = () => {
   const initMaxTransit = 1;
   const [maxMinutes, setMaxMinutes] = useState(initMaxMinutes);
   const [maxTransit, setMaxTransit] = useState(initMaxTransit);
+  const [stations, setStations] = useState([]);
   const [layers, setLayers] = useState([]);
   const [hoverInfo, setHoverInfo] = useState();
   const [adaptive, setAdaptive] = useState(false);
@@ -47,6 +46,23 @@ const RailwayMap = () => {
   const colorRange = adaptive ? maxMinutes : 60;
   const colorScale = time => d3.color(colorInterpolate(parseInt(time) / colorRange));
 
+  // Checks if the given station feature is visible under the current setting
+  const visible = feature => {
+    const reachable = parseInt(feature.properties.time) <= maxMinutes;
+    const isTransitOk = parseInt(feature.properties.transit_count) <= maxTransit;
+    return reachable && isTransitOk;
+  };
+  const visibleStations = stations.filter(visible);
+
+  // Load station features from GeoJSON
+  useEffect(() => {
+    (async () => {
+      const stationJson = await d3.json(stationData);
+      setStations(stationJson.features);
+    })();
+  }, []);
+
+  // Update layers
   useEffect(() => {
     setLayers([
       new GeoJsonLayer({
@@ -76,10 +92,8 @@ const RailwayMap = () => {
         stroked: false,
         opacity: 0.8,
         getFillColor: f => {
-          const reachable = parseInt(f.properties.time) <= maxMinutes;
-          const isTransitOk = parseInt(f.properties.transit_count) <= maxTransit;
           const color = colorScale(f.properties.time);
-          return [color.r, color.g, color.b, (reachable && isTransitOk ? 255 : 0)];
+          return [color.r, color.g, color.b, (visible(f) ? 255 : 0)];
         },
         pickable: true,
         onHover: setHoverInfo
@@ -131,15 +145,16 @@ const RailwayMap = () => {
       </DeckGL>
       <Box
         w="300px"
-        h="500px"
+        h="100vh"
         boxShadow="md"
         rounded="md"
         bg="white"
         zIndex={999}
         pos="absolute"
-        top="10"
-        left="10"
+        top="0"
+        left="0"
         p="4"
+        overflow="scroll"
       >
         <div>Maximum minutes: <b>{maxMinutes}</b> [min]</div>
         <Slider
@@ -212,6 +227,39 @@ const RailwayMap = () => {
             </SliderTrack>
             <SliderThumb />
           </Slider>
+        </Box>
+
+        <Divider m="2" />
+        <Box>
+          <div>Stations: {visibleStations.length}</div>
+          <br />
+          <Table size="sm">
+            <Thead>
+              <Tr>
+                <Th>Station</Th>
+                <Th isNumeric>Min</Th>
+                <Th isNumeric>#</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {visibleStations
+                .sort((a, b) => d3.ascending(a.properties.time, b.properties.time))
+                .map((station, i) => (
+                  <Tr
+                    key={i}
+                    _hover={{
+                      background: "#eff",
+                      color: "teal.500",
+                    }}
+                  >
+                    <Td>{station.properties.name}</Td>
+                    <Td isNumeric>{station.properties.time}</Td>
+                    <Td isNumeric>{station.properties.transit_count}</Td>
+                  </Tr>
+                ))
+              }
+            </Tbody>
+          </Table>
         </Box>
 
       </Box>
