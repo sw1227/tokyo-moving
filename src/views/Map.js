@@ -35,7 +35,9 @@ const initialViewState = {
 
 const RailwayMap = () => {
   const initMaxMinutes = 30;
+  const initMaxTransit = 1;
   const [maxMinutes, setMaxMinutes] = useState(initMaxMinutes);
+  const [maxTransit, setMaxTransit] = useState(initMaxTransit);
   const [layers, setLayers] = useState([]);
   const [hoverInfo, setHoverInfo] = useState();
   const [adaptive, setAdaptive] = useState(false);
@@ -67,7 +69,7 @@ const RailwayMap = () => {
         data: stationData,
         getRadius: 100,
         updateTriggers: {
-          getFillColor: [maxMinutes, adaptive, colorScaleName]
+          getFillColor: [maxMinutes, adaptive, colorScaleName, maxTransit]
         },
         pointRadiusMinPixels: 5,
         filled: true,
@@ -75,14 +77,15 @@ const RailwayMap = () => {
         opacity: 0.8,
         getFillColor: f => {
           const reachable = parseInt(f.properties.time) <= maxMinutes;
+          const isTransitOk = parseInt(f.properties.transit_count) <= maxTransit;
           const color = colorScale(f.properties.time);
-          return [color.r, color.g, color.b, (reachable ? 255 : 0)];
+          return [color.r, color.g, color.b, (reachable && isTransitOk ? 255 : 0)];
         },
         pickable: true,
         onHover: setHoverInfo
       })
     ]);
-  }, [maxMinutes, adaptive, colorScaleName])
+  }, [maxMinutes, maxTransit, adaptive, colorScaleName])
 
 
   return (
@@ -145,7 +148,7 @@ const RailwayMap = () => {
           min={0}
           max={60}
           step={5}
-          onChange={value => setMaxMinutes(value)}
+          onChange={setMaxMinutes}
         >
           <SliderTrack>
             <SliderFilledTrack />
@@ -192,6 +195,23 @@ const RailwayMap = () => {
               <option value={d[1]} key={i}>Map style: {d[0]}</option>
             ))}
           </Select>
+        </Box>
+
+        <Divider m="2" />
+        <Box>
+          <div>Transit count ≦ <b>{maxTransit}</b></div>
+          <Slider
+            aria-label="slider-ex-1"
+            defaultValue={initMaxTransit}
+            min={0}
+            max={1}
+            onChange={setMaxTransit}
+          >
+            <SliderTrack>
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb />
+          </Slider>
         </Box>
 
       </Box>
