@@ -20,6 +20,7 @@ import stationData from '../data/tokyo_moving60.geojson';
 import railData from '../data/N02-19_RailroadSection.geojson';
 
 import { railColor, railDashArray, colorInterpolates } from '../color';
+import { mapStyles } from '../constants';
 
 
 // Initial viewport settings
@@ -36,7 +37,9 @@ const RailwayMap = () => {
   const initMaxMinutes = 30;
   const [maxMinutes, setMaxMinutes] = useState(initMaxMinutes);
   const [layers, setLayers] = useState([]);
+  const [hoverInfo, setHoverInfo] = useState();
   const [adaptive, setAdaptive] = useState(false);
+  const [mapStyle, setMapStyle] = useState(Object.values(mapStyles)[0]);
   const [colorScaleName, setColorScaleName] = useState(Object.keys(colorInterpolates)[0]);
   const colorInterpolate = colorInterpolates[colorScaleName];
   const colorRange = adaptive ? maxMinutes : 60;
@@ -55,7 +58,9 @@ const RailwayMap = () => {
         getDashArray: railDashArray,
         dashJustified: false,
         highPrecisionDash: true,
-        extensions: [new PathStyleExtension({ dash: true })]
+        extensions: [new PathStyleExtension({ dash: true })],
+        pickable: true,
+        onHover: setHoverInfo
       }),
       new GeoJsonLayer({
         id: "station-layer",
@@ -72,7 +77,9 @@ const RailwayMap = () => {
           const reachable = parseInt(f.properties.time) <= maxMinutes;
           const color = colorScale(f.properties.time);
           return [color.r, color.g, color.b, (reachable ? 255 : 0)];
-        }
+        },
+        pickable: true,
+        onHover: setHoverInfo
       })
     ]);
   }, [maxMinutes, adaptive, colorScaleName])
@@ -85,11 +92,43 @@ const RailwayMap = () => {
         controller={true}
         layers={layers}
       >
-        <StaticMap mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_TOKEN} />
+        <StaticMap
+          mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+          mapStyle={mapStyle}
+        />
+        {hoverInfo?.object && (
+          <Box
+            pos="absolute"
+            zIndex={999}
+            pointerEvents="none"
+            top={hoverInfo.y}
+            left={hoverInfo.x}
+            boxShadow="md"
+            rounded="xs"
+            bg="rgba(255, 255, 255, 0.8)"
+            fontSize="0.8rem"
+            p="1"
+          >
+            {(hoverInfo.layer.id === "station-layer") && (
+              <>
+                { hoverInfo.object.properties.name}
+                < br />
+                { hoverInfo.object.properties.time}[min]
+                /
+                乗り換え{hoverInfo.object.properties.transit_count}回
+              </>
+            )}
+            {(hoverInfo.layer.id === "rail-layer") && (
+              <>
+                {hoverInfo.object.properties["路線名"]}
+              </>
+            )}
+          </Box>
+        )}
       </DeckGL>
       <Box
         w="300px"
-        h="250px"
+        h="500px"
         boxShadow="md"
         rounded="md"
         bg="white"
@@ -105,6 +144,7 @@ const RailwayMap = () => {
           defaultValue={initMaxMinutes}
           min={0}
           max={60}
+          step={5}
           onChange={value => setMaxMinutes(value)}
         >
           <SliderTrack>
@@ -140,6 +180,18 @@ const RailwayMap = () => {
             isChecked={adaptive}
             onChange={event => setAdaptive(event.target.checked)}
           />
+        </Box>
+
+        <Divider m="2" />
+        <Box>
+          <Select
+            variant="filled"
+            onChange={event => setMapStyle(event.target.value)}
+          >
+            {Object.entries(mapStyles).map((d, i) => (
+              <option value={d[1]} key={i}>Map style: {d[0]}</option>
+            ))}
+          </Select>
         </Box>
 
       </Box>
