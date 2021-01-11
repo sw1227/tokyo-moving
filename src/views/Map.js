@@ -10,12 +10,16 @@ import {
   Switch,
   Select,
   HStack,
+  VStack,
+  Checkbox,
+  Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon,
   Slider, SliderTrack, SliderFilledTrack, SliderThumb,
   Table, Thead, Tbody, Tr, Th, Td
 } from '@chakra-ui/react';
 
 import stationData from '../data/tokyo_moving60.geojson';
 import railData from '../data/N02-19_RailroadSection.geojson';
+import priceTokyo from '../data/L01-20_13.geojson';
 
 import { railColor, railDashArray, colorInterpolates } from '../color';
 import { mapStyles } from '../constants';
@@ -40,6 +44,11 @@ const RailwayMap = () => {
   const [layers, setLayers] = useState([]);
   const [hoverInfo, setHoverInfo] = useState();
   const [adaptive, setAdaptive] = useState(false);
+  const [checkedLayers, setCheckedLayers] = useState({
+    station: true,
+    railway: true,
+    price: false
+  });
   const [mapStyle, setMapStyle] = useState(Object.values(mapStyles)[0]);
   const [colorScaleName, setColorScaleName] = useState(Object.keys(colorInterpolates)[0]);
   const colorInterpolate = colorInterpolates[colorScaleName];
@@ -64,42 +73,69 @@ const RailwayMap = () => {
 
   // Update layers
   useEffect(() => {
-    setLayers([
-      new GeoJsonLayer({
-        id: "rail-layer",
-        data: railData,
-        getLineWidth: 2,
-        getLineColor: railColor,
-        lineWidthScale: 30,
-        lineWidthMinPixels: 2,
-        opacity: 0.4,
-        getDashArray: railDashArray,
-        dashJustified: false,
-        highPrecisionDash: true,
-        extensions: [new PathStyleExtension({ dash: true })],
-        pickable: true,
-        onHover: setHoverInfo
-      }),
-      new GeoJsonLayer({
-        id: "station-layer",
-        data: stationData,
-        getRadius: 100,
-        updateTriggers: {
-          getFillColor: [maxMinutes, adaptive, colorScaleName, maxTransit]
-        },
-        pointRadiusMinPixels: 5,
-        filled: true,
-        stroked: false,
-        opacity: 0.8,
-        getFillColor: f => {
-          const color = colorScale(f.properties.time);
-          return [color.r, color.g, color.b, (visible(f) ? 255 : 0)];
-        },
-        pickable: true,
-        onHover: setHoverInfo
-      })
-    ]);
-  }, [maxMinutes, maxTransit, adaptive, colorScaleName])
+    const newLayers = [];
+    if (checkedLayers.railway) {
+      newLayers.push(
+        new GeoJsonLayer({
+          id: "rail-layer",
+          data: railData,
+          getLineWidth: 2,
+          getLineColor: railColor,
+          lineWidthScale: 30,
+          lineWidthMinPixels: 2,
+          opacity: 0.4,
+          getDashArray: railDashArray,
+          dashJustified: false,
+          highPrecisionDash: true,
+          extensions: [new PathStyleExtension({ dash: true })],
+          pickable: true,
+          onHover: setHoverInfo
+        })
+      );
+    }
+    if (checkedLayers.station) {
+      newLayers.push(
+        new GeoJsonLayer({
+          id: "station-layer",
+          data: stationData,
+          getRadius: 100,
+          updateTriggers: {
+            getFillColor: [maxMinutes, adaptive, colorScaleName, maxTransit]
+          },
+          pointRadiusMinPixels: 5,
+          filled: true,
+          stroked: false,
+          opacity: 0.8,
+          getFillColor: f => {
+            const color = colorScale(f.properties.time);
+            return [color.r, color.g, color.b, (visible(f) ? 255 : 0)];
+          },
+          pickable: true,
+          onHover: setHoverInfo
+        })
+      );
+    }
+    if (checkedLayers.price) {
+      newLayers.push(
+        new GeoJsonLayer({
+          id: "landprice-layer",
+          data: priceTokyo,
+          getRadius: 100,
+          pointRadiusMinPixels: 5,
+          filled: true,
+          stroked: false,
+          opacity: 0.8,
+          getFillColor: f => {
+            // TODO: Data-driven Quantile Normalization
+            const color = d3.color(colorScale(parseInt(f.properties.L01_006)/100000));
+            return [color.r, color.g, color.b];
+          }
+        })
+      );
+    }
+
+    setLayers(newLayers);
+  }, [maxMinutes, maxTransit, adaptive, colorScaleName, checkedLayers])
 
 
   return (
@@ -227,6 +263,42 @@ const RailwayMap = () => {
             </SliderTrack>
             <SliderThumb />
           </Slider>
+        </Box>
+
+        <Divider m="2" />
+        <Box>
+          <Accordion allowToggle>
+            <AccordionItem>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  Layers
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel pb={4}>
+                <VStack align="stretch">
+                  <Checkbox
+                    isChecked={checkedLayers.station}
+                    onChange={e => setCheckedLayers({ ...checkedLayers, station: e.target.checked })}
+                  >
+                    Station
+                  </Checkbox>
+                  <Checkbox
+                    isChecked={checkedLayers.railway}
+                    onChange={e => setCheckedLayers({ ...checkedLayers, railway: e.target.checked })}
+                  >
+                    Railway
+                  </Checkbox>
+                  <Checkbox
+                    isChecked={checkedLayers.price}
+                    onChange={e => setCheckedLayers({ ...checkedLayers, price: e.target.checked })}
+                  >
+                    Land Price
+                  </Checkbox>
+                </VStack>
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
         </Box>
 
         <Divider m="2" />
